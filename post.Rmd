@@ -1,0 +1,55 @@
+---
+title: "Fire Emblem Heroes"
+author: "Pedro Russo"
+date: "February 15, 2018"
+output: html_document
+---
+
+# Introduction
+
+In this post I will try to develop a simple application to analyze several different aspects of characters in the popular Fire Emblem Heroes mobile game. For those who don't know, this is a tactical RPG game which debuted in 2017, and has become one of the most downloaded games in the Android and iOS digital stores. 
+
+# Load libraries
+
+Let's start by loading the libraries we'll need for this project
+
+```{r}
+library(jsonlite)
+```
+
+
+# Data collection
+
+To begin, we first need some data from the game. Fortunately, GitHub user arghblargh has provided the data we want in his account, so all we need to do is take the data from there. We can clone the repo with the following command in the terminal:  
+
+`git clone https://github.com/arghblargh/feh-inheritance-tool.git`  
+
+We can see that inside the cloned repository there is a folder called `stats` inside the `src/data` folder. Let's get the `5_40.json` file. This file will detail the stats of 5* characters at level 40, that is, the most powerful a character can get without merging (a.k.a. combining two copies of the same character into one). The file is currently in JSON format, so let's make it a little more R-friendly by turning it into a data.frame.
+
+```{r}
+stats5_40 <- fromJSON("./feh-inheritance-tool/src/data/stats/5_40.json")
+stats <- as.data.frame(do.call(rbind.data.frame, stats5_40))
+
+head(stats)
+```
+
+Awesome, now we can start analyzing our data. 
+
+# Data analysis
+
+In Fire Emblem Heroes, players take turns with an AI attacking the other team's heroes, and the first to wipe out the other team first wins. One must therefore know how to build a synergistic team in order to better counter the opposing team's strategies. There several different factors to take into account to ascertain a team's effectiveness, but for now let's consider only the game's individual character compositions.
+
+In this game, all characters are described by 5 different attributes (stats):  
+
+* HP (hit points) The amount of damage the unit can take;
+* Atk (attack) The unit's attack power (i. g. the amount of damage it can deal);
+* Spd (speed) The unit's speed (used to determine if a unit can attack twice in a turn);
+* Def (defense) Relative to the unit's physical bulk for resisting physical attacks;
+* Res (resistance) The unit's capability of resisting a magical attack.  
+
+It's easy to think that a good character should be one which excels in all 5 stat categories. However, that is not always the case, as a high defense won't save your hero when it is double attacked by a speedy, high attacking mage. On the other hand, it is useful to calculate the __base stat total__ (BST) of each hero in order to see how each of them stacks up against each other. The BST is just the number we get when we sum up the values for each individual stat, so let's add that to our data.frame:  
+
+```{r}
+stats$BST <- apply(stats, 1, sum)
+```
+
